@@ -321,13 +321,17 @@ def activar(update: Update, context: CallbackContext):
     mensaje = "\n".join(resumen)
     update.message.reply_text(f"Calificación completa:\n{mensaje}")
 
+import time
+
 def correr_bot():
     updater = Updater(token=TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("activar", activar))
     updater.start_polling()
-    updater.idle()
+    print("Bot Galicia N4 está activo.")
+    while True:
+        time.sleep(10)
 
 if __name__ == "__main__":
     Thread(target=correr_bot).start()
