@@ -1,8 +1,10 @@
-
 services:
   - type: web
-    name: galicia-n4
+    name: bot-galicia-n4
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: TELEGRAM_TOKEN
+        value: 7863131299:AAHAc4TdPQpQL0riIDbGaqS8sts6wKzCv_0

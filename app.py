@@ -1,39 +1,52 @@
-
+import os
 from flask import Flask, request
 import telegram
-import os
 from calificar import ejecutar_calificacion
 
-# Config
-TELEGRAM_TOKEN = "7863131299:AAHAc4TdPQpQL0riIDbGaqS8sts6wKzCv_0"
+app = Flask(__name__)
+
+TELEGRAM_TOKEN = '7863131299:AAHAc4TdPQpQL0riIDbGaqS8sts6wKzCv_0'
 CHAT_ID_AUTORIZADO = 5171106537
 
 bot = telegram.Bot(token=TELEGRAM_TOKEN)
-app = Flask(__name__)
+ultimas_urls_calificadas = []
 
-@app.route("/", methods=["POST"])
+@app.route('/', methods=['POST'])
 def webhook():
+    global ultimas_urls_calificadas
+
     data = request.get_json()
-    if "message" in data and "text" in data["message"]:
+    if "message" in data:
         chat_id = data["message"]["chat"]["id"]
-        text = data["message"]["text"]
+        mensaje = data["message"].get("text", "")
+
         if chat_id != CHAT_ID_AUTORIZADO:
-            bot.send_message(chat_id=chat_id, text="🚫 Acceso no autorizado.")
-            return "ok"
+            return "No autorizado", 200
 
-        bot.send_message(chat_id=chat_id, text=f"📨 Recibido: {text}")
+        if mensaje.startswith("/activar"):
+            try:
+                partes = mensaje.strip().split()
+                cantidad = int(partes[1]) if len(partes) > 1 else 1
+                urls = ejecutar_calificacion(cantidad)
+                ultimas_urls_calificadas = urls
+                resumen = "\n".join(f"🔹 {url}" for url in urls)
+                respuesta = f"✅ Se calificaron {len(urls)} URLs:\n{resumen}"
+            except Exception as e:
+                respuesta = f"⚠️ Error al ejecutar la calificación: {str(e)}"
 
-        if text.startswith("/status"):
-            bot.send_message(chat_id=chat_id, text="✅ El bot está activo.")
-        elif text.startswith("/calificar"):
-            partes = text.split()
-            cantidad = int(partes[1]) if len(partes) > 1 and partes[1].isdigit() else 1
-            ejecutar_calificacion(bot, chat_id, cantidad)
-    return "ok"
+        elif mensaje.startswith("/status"):
+            if ultimas_urls_calificadas:
+                resumen = "\n".join(f"🔹 {url}" for url in ultimas_urls_calificadas)
+                respuesta = f"📊 Últimas URLs calificadas:\n{resumen}"
+            else:
+                respuesta = "ℹ️ No se calificaron URLs aún."
 
-@app.route("/")
-def index():
-    return "Bot Galicia N4 activo"
+        elif mensaje.startswith("/start"):
+            respuesta = "👋 Bot Galicia N4 activo. Usá /activar [cantidad] o /status."
 
-if __name__ == "__main__":
-    app.run(debug=True)
+        else:
+            respuesta = "❓ Comando no reconocido. Usá /activar [cantidad] o /status."
+
+        bot.send_message(chat_id=chat_id, text=respuesta)
+
+    return "OK", 200

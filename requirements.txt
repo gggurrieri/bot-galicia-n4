@@ -1,7 +1,7 @@
 flask
+telegram
 selenium
 pandas
 openpyxl
 requests
 gunicorn
-python-telegram-bot==13.15
