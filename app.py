@@ -1,33 +1,41 @@
 import os
 import random
 import requests
+from flask import Flask
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from bs4 import BeautifulSoup
+from threading import Thread
 
 TOKEN = os.getenv("BOT_TOKEN")
 GALICIA_URL = "https://ayudaempresas.galicia.ar/AyudajuridicaSPA/ini/"
 
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Bot Galicia N4 activo. Usá /activar 3 para calificar 3 URLs.")
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot Galicia N4 activo"
 
 def obtener_urls_n4():
     try:
         response = requests.get(GALICIA_URL)
         soup = BeautifulSoup(response.text, "html.parser")
         urls = [a['href'] for a in soup.find_all('a', href=True) if "/n4/" in a['href']]
-        urls = list(set(urls))  # eliminar duplicados
+        urls = list(set(urls))
         return urls
     except Exception as e:
         return []
 
 def calificar_url(session, full_url):
     try:
-        session.post(f"{full_url}/Utilidad", data={"valor": "1"})  # Votar "Sí"
-        session.post(f"{full_url}/Satisfaccion", data={"valor": "5"})  # Votar 5 estrellas
+        session.post(f"{full_url}/Utilidad", data={"valor": "1"})
+        session.post(f"{full_url}/Satisfaccion", data={"valor": "5"})
         return True
     except:
         return False
+
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("Bot Galicia N4 activo. Usá /activar 3 para calificar 3 URLs.")
 
 def activar(update: Update, context: CallbackContext):
     cantidad = 1
@@ -51,8 +59,8 @@ def activar(update: Update, context: CallbackContext):
     mensaje = "\n".join(resumen)
     update.message.reply_text(f"Calificación completa:\n{mensaje}")
 
-def main():
-    updater = Updater(TOKEN, use_context=True)
+def correr_bot():
+    updater = Updater(token=TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("activar", activar))
@@ -60,4 +68,6 @@ def main():
     updater.idle()
 
 if __name__ == "__main__":
-    main()
+    Thread(target=correr_bot).start()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)

@@ -2,8 +2,8 @@ services:
   - type: web
     name: bot-galicia-n4
     env: python
-    buildCommand: ""
+    buildCommand: "pip install -r requirements.txt"
     startCommand: python app.py
     envVars:
-      - key: BOT_TOKEN
-        value: TU_TOKEN_DE_TELEGRAM
+      - key: '7863131299:AAHAc4TdPQpQL0riIDbGaqS8sts6wKzCv_0'
+        value: 5171106537
