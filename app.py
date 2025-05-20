@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request
-import telegram
+from telegram import Bot
 from calificar import ejecutar_calificacion
 
 app = Flask(__name__)
@@ -8,7 +8,7 @@ app = Flask(__name__)
 TELEGRAM_TOKEN = '7863131299:AAHAc4TdPQpQL0riIDbGaqS8sts6wKzCv_0'
 CHAT_ID_AUTORIZADO = 5171106537
 
-bot = telegram.Bot(token=TELEGRAM_TOKEN)
+bot = Bot(token=TELEGRAM_TOKEN)
 ultimas_urls_calificadas = []
 
 @app.route('/', methods=['POST'])
