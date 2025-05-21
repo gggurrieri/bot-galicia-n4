@@ -1,36 +1,48 @@
+
 import os
-from dotenv import load_dotenv
-load_dotenv()
-
+import telegram
 from telegram.ext import Updater, CommandHandler, CallbackContext
-from telegram import Update
-from flask import Flask
-import threading
-import time
+from flask import Flask, request
 
-# Variables de entorno
-TOKEN = os.getenv("TOKEN")
-print(f"[DEBUG] TOKEN obtenido: {TOKEN}")
+TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
-    raise ValueError("La variable TOKEN no está definida. Verificá tus variables de entorno en Render o el .env local.")
-CHAT_ID_AUTORIZADO = os.getenv("CHAT_ID_AUTORIZADO")
-URL_INICIAL = os.getenv("URL_INICIAL")
+    raise ValueError("BOT_TOKEN environment variable is missing.")
 
-if not TOKEN:
-    raise ValueError("La variable TOKEN no está definida. Verificá tus variables de entorno en Render o el .env local.")
+bot = telegram.Bot(token=TOKEN)
+app = Flask(__name__)
 
-print(f"[DEBUG] TOKEN cargado correctamente.")
+updater = Updater(token=TOKEN, use_context=True)
+dispatcher = updater.dispatcher
 
-# Resto de tu código...
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Bot Galicia N4 activado correctamente.")
+# Command handler
+def activar(update: telegram.Update, context: CallbackContext):
+    update.message.reply_text("Bot activado correctamente. ¡Listo para calificar URLs!")
 
+dispatcher.add_handler(CommandHandler("activar", activar))
+
+# Webhook endpoint
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    update = telegram.Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "ok"
+
+# Home route
+@app.route('/')
+def index():
+    return 'Bot Galicia N4 corriendo (webhook activo).'
+
+# Start the webhook
 def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    
-    updater.start_polling()
+    port = int(os.environ.get("PORT", 10000))
+    webhook_url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/{TOKEN}"
+
+    updater.start_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=TOKEN,
+    )
+    updater.bot.set_webhook(webhook_url)
     updater.idle()
 
 if __name__ == '__main__':
